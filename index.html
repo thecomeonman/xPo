@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<?xml version="1.0" encoding="utf-8"?>
+
+<html>
+
+<head>
+<title>xPo, A Way to Summarise Attacking Strategy</title>
+<meta name="keywords" content="football, analysis, data science">
+<meta name="description" content="This document describes xPo, a way to summarise attacking strategy">
+<meta name="Author" content="Aditya Kothari">
+</head>
+
+<link rel = "stylesheet"
+   type = "text/css"
+   href = "./Assets/Stylesheet.css" />
+
+<body>
+
+
+
+<button class='tablink6' onclick="openPage('Intro', this, 'red', 'tablink6')" id="defaultOpen">Introduction</button>
+<button class='tablink6' onclick="openPage('setTeamAttack', this, 'red', 'tablink6')">How Teams Attack</button>
+<button class='tablink6' onclick="openPage('setPlayerAttack', this, 'red', 'tablink6')">How Players Attack</button>
+<button class='tablink6' onclick="openPage('setTeamConcede', this, 'red', 'tablink6')">How Teams Concede</button>
+<button class='tablink6' onclick="openPage('ModelComparison', this, 'red', 'tablink6')">Comparison With Other Models</button>
+<button class='tablink6' onclick="openPage('ReachOut', this, 'red', 'tablink6')">What Do You Think?</button>
+
+<div id = 'Intro' class="tabContent">
+
+    <p style="font-size:0.8em">
+        <i>
+        Update on 11th April 2020: There was a calculation error which caused passes 
+        and moves to not get equal weightage as shots which diminised their 
+        contribution. It's been fixed now.
+        </i>
+    <p>
+
+    <h3>What is xPo?</h3>
+
+    <p>
+        xPo expands to expected potential.
+    </p>
+
+    <h3>Why Do We Need xPo?</h3>
+
+    <p>
+        I wanted to figure out a way to measure the value of various 
+        attacking actions on the pitch. xPo is just an estimate of the 
+        potential xG an action could eventually generate.
+    </p>
+    
+    <p>
+        I've listed some differences with the 
+        most commonly used method, xG Chain, and a recently popular method, xT
+        in the Comparisons With Other Models section.
+    </p>
+
+    <h3>What is xG?</h3>
+
+    <p>
+        For those not familiar with xG, it's just a probability assigned to a 
+        shot for it ending up in a goal. There are multiple ways to calculate it
+        and you'll find a whole host of material about it online.
+    </p>
+
+    <p>
+        I need xG to calculate xPo and I employ probably the most simplest of 
+        methods to calculate xG which I describe later. 
+    </p>
+
+    <h3>How is xPo calculated?</h3>
+
+    <p>
+        If you have the ball, then there are three things you can do with it:
+    </p>
+
+    <ul>
+    <li>Pass it to some place</li>
+    <li>Run with it to some place</li>
+    <li>Shoot</li>
+    </ul> 
+
+    <p>
+        Each of those actions may or may not eventually lead to a goal but we can 
+        estimate how often they are 
+        likely to lead to one. To do that, I evaluate three sets of numbers -
+    </p>
+
+    <ul>
+        <li>
+            xPo for shots: This is the same as the xG of those shots.
+        </li>
+        <li>
+            xPo for passes: In the same spirit as xG, I evaluate the eventual xG 
+            a play is likely to generate after a pass moving the ball from one 
+            area of the pitch to another.
+        </li>
+        <li>
+            xPo for runs: Calculated in the same way as xPo for passes
+        </li>
+    </ul>
+
+    <p>
+        The xPo for a shot is the same as the xG for a shot so first we calculate
+        xG for all the shots we have in the database. This is
+        straightforward - we take all shots from a certain area of the pitch,
+        see how many of them were goals, and the xG for that area of the pitch 
+        is therefore the number of goals / number of shots for that area. We
+        could use more sophisticated measures of xG if we could calculate it,
+        but we'll keep it simple for now.
+    </p>
+
+    <p>
+        Once we've calculated the xG for all areas of the pitch, we can
+        attribute these xG values back to the shots. Now onwards we care about 
+        the xG for a shot, and we don't care about the actual result of the shot
+        being a goal or not anymore.
+    </p>
+
+    <p>
+        Now we start looking at calculating xPo for passes and runs. 
+        Let's say that in the first play that we look at there
+        were 5 passes and 3 runs and that play eventually resulted in a shot 
+        with an xG of 0.3. All 5 passes and all 3 runs would get an equal and
+        complete credit of an xPo of 0.3. Let's say the next play were looking
+        at didn't result in a shot then all the actions in that play get credited
+        with an xPo of 0.
+    </p>
+    
+    <p>
+        It so happens that both the plays described above had a pass that originated
+        in the same area as each other and ended in the same area as each other,
+        i.e. we have two instances of a similar pass being played, one in each play. 
+        In one case the eventual xG is 0.3, and in the other the eventual xG is 0. 
+        The average eventual xG for such a pass therefore is 0.15 so we update
+        the xPo for that pass as 0.15.
+    </p>
+
+    <p>
+        We continue this process across all plays, considering all runs and all
+        passes and keep aggregating the eventual xG generated by similar passes
+        and runs. When we've finally gone through all the plays, we arrive at
+        the final xPo value for every particular action a team has performed.
+        Every pass between a set of coordinates, every run between a set of 
+        coordinates, and every shot from any coordinate now has an xPo value.
+        Ta da!
+    </p>
+
+    <p>
+        However, given the limited quantity of football that gets played, it's 
+        not feasible to get enough samples of a pass or a run or a shot at exactly
+        the same set of coordinates. To get around this, I include events starting
+        and ending in areas around the specific set of coordinates being looked 
+        at as well. The farther these other events are from the exact pair of 
+        coordinates, the lesser weightage they get in the final xPo calculation
+        for those coordinates.
+    </p>
+
+    <h3>Data Processing</h3>
+
+    <p>
+        I have had to infer plays and runs from events data. I marked plays 
+        based on criteria like whether the team making the passes changed, or 
+        if the ball went out of play, etc. I extracted runs as all movement 
+        between the end coordinate of
+        a pass and the start coordinate of the next pass. There are likely some
+        edge cases that will sneak though and look funny but I'm working on
+        making this better too. A large proportion of the data is still correct
+        though so I'm still letting this out in the wild anyway.
+    </p>
+    
+    <p>
+        I also considered the movement between a pass as a run only if the 
+        displacement met a length threshold. In this case the cut off was a length
+        of 20 units where the pitch has been stretched to fit a 120 X 80 unit size.
+    </p>
+
+</div>
+
+<div id = 'setTeamAttack' class="tabContent">
+<div id = 'setTeamAttackSelection'>
+
+    <h3>How To View This</h3>
+    <h4>Select a Team</h3>
+
+    <p>
+        I have used data for some EPL games from the 2019/20 season until March 2020.
+        I've used only teams which haven't had any managerial changes
+        during the season because a consistent strategy over the whole season
+        is easier to capture than a mix of two or more stategies.
+    </p>
+    
+    <p>        
+        There are extra comments for Liverpool which may help you understand
+        what's happening more easily so if you're seeing this
+        for the first time then you may want to choose Liverpool.
+    </p>
+
+    <h4>Viewing Pointers</h3>
+
+    <p>
+        Different colours mean different scales. The brightest red is not the same
+        as the brightest blue is not the same as the brightest yellow, etc.
+        Comparing the brightness of two different colours is meaningless.
+    </p>
+
+    <p>
+        You can opt to compare different selections on a common colour scale by 
+        leaving "Scale color relative only to selection" unchecked. By checking it 
+        you shrink the colour scale to span 
+        only across the selection's numbers rather than the common
+        colour scale which makes it easier to see patterns for players which don't
+        have very strong numbers for either probabilities or overall contribution.
+    </p>
+    
+    <p>
+        I'd also recommend a high-ish brightness setting and disabling 
+        your red tinting software if you have it on. 
+    </p>
+
+</div>
+<div id = 'TeamAttackContent'></div>
+</div>
+
+
+<div id = 'setPlayerAttack' class="tabContent">
+    <div id = 'setPlayerAttackSelection'></div>    
+    <div id = 'PlayerAttackContent'></div>
+</div>
+
+<div id = 'setTeamConcede' class="tabContent">
+    <div id = 'setTeamConcedeSelection'></div>    
+    <div id = 'TeamConcedeContent'></div>
+</div>
+    
+<div id = 'ModelComparison' class="tabContent">
+
+    <p>
+        The models that I'm familiar with that people use to perform this 
+        sort of analysis are listed below along with my opinion on the
+        advatanges or disadvantages of each of them compared to xPo. 
+    </p>
+
+    
+    <h3>xG chain</h3>
+
+    <p>
+        The motive behind this model is to split credit for goals / shots 
+        amongst all the participants involved in the play leading up to it, so 
+        in a way it's not doing exactly the same thing as xPo. However, adding
+        these up across actions or matches, etc. has been an oft used metric
+        to establish the overall credit players should get towards their team's
+        goals.
+    </p>
+
+    <p>
+        This takes the xG of the shot and splits it up equally between all
+        actions in that play. It's quick and simple and easy to understand. This
+        does not, however, assign a value to every action. It only assigns a
+        value to an action that led to a shot.
+    </p>
+
+    <h3>xThreat</h3>
+
+    <p>
+        xT tries to assign a value to having the ball in a certain part of the
+        pitch. The value of an action is therefore the difference between the
+        value of the ball being in its start position, before the action, and
+        in its end position, after the action.
+    </p>
+
+    <p>
+        Some things that I consider pros for xPo over xT -
+    </p>
+
+    <ul>
+        <li>
+            xPo assigns a value to an action executed from and, when relevant, 
+            to a set of coordinates. xT assigns a value to the ball being in a 
+            certain part of the pitch.
+        </li>
+        <li>
+            xPo distinguishes a pass and a run and assigns a separate value 
+            to both. xT counts both as ball movement and clubs them together.
+        </li>
+        <li>
+            xPo does not draw a grid on the pitch, it is calculated for any
+            area or pair of areas on the pitch and can be calculated for any 
+            resolution. xT considers a grid on the pitch and is evaluated for a 
+            block in the grid. A small movement
+            on the pitch may move you across blocks and change your xT value 
+            unrealistically but your xPo value should not get affected so much.
+            Karun mentioned that this can be worked around by interpolating 
+            the xT values for coordinates that fall between the centers of
+            the grid.
+        </li>
+    </ul>
+
+    <p>
+        Some things that I consider pros for xT over xPo -
+    </p>
+
+    <ul>
+        
+        <li>
+            xPo only cares for the action and the end outcome of that play and
+            assumes that by averaging over all the plays the ensuing actions
+            get incorporated somehow in the xPo value. xT explicitly considers
+            possible sequences of play going through various parts of the pitch.
+        </li>
+        
+        <li>
+            xPo only gives credit when a shot happened at the end of the play
+            whereas xT also gives credit even for situations where they got into
+            a possible shooting position even if they didn't actually shoot.
+        </li>
+    </ul>
+
+    <p>
+        And some trade offs -
+    </p>
+
+    <ul>
+        <li>
+            xPo may spread the data too thin since it tries to capture an
+            event between any pair of coordinates. xT models a block in the grid
+            so there is sufficient data but it might mix too many situations
+            together.
+        </li>
+    </ul>
+
+    <h3>VAEP</h3>
+
+    <p>
+        This uses the last three actions at any point in time, and various 
+        attributes of those three actions as inputs to a function that estimates
+        the probability that a goal will be scored or conceded in the next 10 
+        moves. 
+    </p>
+
+    <p>
+        VAEP has two main advantages over xPo. Firstly, VAEP is a far more robust 
+        formulation given that it considers all these extra attributes. Second, 
+        it incorporates the probability of conceding so you also get an idea of  
+        the downside of an action.
+    </p>
+    
+    <p>
+        The main disadvantage of it though is that given it's such a rich formulation,
+        it will need quite a lot of data to calibrate. xPo is just a slightly complex 
+        aggregation of whatever 
+        data is made available to it and it doesn't need to be calibrated.
+        It can therefore be run on small sets of data too and return a more 
+        specific set of values for, say, a team or a player which can be 
+        important if their playing styles are distinct from others.
+    </p>
+
+    <h3>Opta's Possession Value</h3>
+
+    <p>
+        I don't think they have revealed their methodology but they estimate a
+        value based on the probability of scoring or conceding after an action.
+        The only
+        thing they have revealed is that they use 5 previous moves to estimate
+        the PV. The pros and cons, I imagine, would thus be similar to VAEP.
+    </p>
+
+</div>
+
+<div id = 'ReachOut' class="tabContent">
+
+    <p>
+        Thanks for making it till here! There are some more posts on the same 
+        concept which you may find interesting:
+    </p>
+
+    <ul>
+        <li>
+            <a href = "./index.html" target="_blank">
+                Team attacking styles
+            </a>
+        </li>
+        <li>
+            <a href = "./indexPlayers.html" target="_blank">
+                Player attacking styles
+            </a>
+        </li>
+    </ul>
+
+    <p>
+        Do you have any feedback, comments, questions, or interesting 
+        observations? You can 
+        <a href = 'https://twitter.com/thecomeonman' target="_blank">find me on Twitter</a>!
+        I'd love to hear your thoughts!
+    </p>
+
+
+</div>
+
+
+<script src = "./Assets/d3.v4.min.js"></script>
+<script src = "./Assets/Tabs.js"></script>
+<script src = "./Assets/Visualisation2.js"></script>
+
+<script>
+
+    // constants for this particular file
+    if ( true ) {
+
+        allSetNames = [
+            'Aston Villa, EPL, 2019-20',
+            'Bournemouth, EPL, 2019-20',
+            'Brighton, EPL, 2019-20',
+            'Burnley, EPL, 2019-20',
+            'Chelsea, EPL, 2019-20',
+            'Crystal Palace, EPL, 2019-20',
+            'Leicester, EPL, 2019-20',
+            'Liverpool, EPL, 2019-20',
+            'Manchester City, EPL, 2019-20',
+            'Manchester United, EPL, 2019-20',
+            'Newcastle, EPL, 2019-20',
+            'Norwich, EPL, 2019-20',
+            'Sheffield United, EPL, 2019-20',
+            'Southampton, EPL, 2019-20',
+            'Wolves, EPL, 2019-20'
+        ]
+
+        allSetCodes = [
+            'AstonVilla_For_Scoring_Team',
+            'Bournemouth_For_Scoring_Team',
+            'Brighton_For_Scoring_Team',
+            'Burnley_For_Scoring_Team',
+            'Chelsea_For_Scoring_Team',
+            'CrystalPalace_For_Scoring_Team',
+            'Leicester_For_Scoring_Team',
+            'Liverpool_For_Scoring_Team',
+            'ManCity_For_Scoring_Team',
+            'ManUtd_For_Scoring_Team',
+            'Newcastle_For_Scoring_Team',
+            'Norwich_For_Scoring_Team',
+            'SheffieldUtd_For_Scoring_Team',
+            'Southampton_For_Scoring_Team',
+            'Wolves_For_Scoring_Team'
+        ]
+
+        selectedSetCode = 'Liverpool_For_Scoring_Team'
+        selectedSetName = allSetNames[allSetCodes.indexOf(selectedSetCode)]
+
+        nBlockWidth = 2
+
+        cWhatScaleToUse = 'Team'
+
+        bExplainerTest = true
+
+        postCode = 'TeamAttackPost'
+        
+        cContentPanelId = 'TeamAttackContent'
+        
+        setSelectionPanelId = 'setTeamAttackSelection'
+
+    }
+
+    fBuildVisualisation (
+        allSetNames,
+        allSetCodes,
+        selectedSetCode,
+        nBlockWidth,
+        cWhatScaleToUse,
+        bExplainerTest,
+        postCode,
+        cContentPanelId,
+        setSelectionPanelId
+    )
+    
+</script>
+
+
+<script>
+
+    // constants for this particular file
+    if ( true ) {
+
+        allSetNames = [
+            'Adama Traore, EPL, 2019-20',
+            'Alisson, EPL, 2019-20',
+            'Allan Saint-Maximin, EPL, 2019-20',
+            'Andrew Robertson, EPL, 2019-20',
+            'Aymeric Laporte, EPL, 2019-20',
+            'Caglar Soyuncu, EPL, 2019-20',
+            'Callum Wilson, EPL, 2019-20',
+            'Danny Ings, EPL, 2019-20',
+            'Dwight McNeil, EPL, 2019-20',
+            'Ederson, EPL, 2019-20',
+            'Emiliano Buendia, EPL, 2019-20',
+            'Harry Wilson, EPL, 2019-20',
+            'Jack Grealish, EPL, 2019-20',
+            'James Maddison, EPL, 2019-20',
+            'Jamie Vardy, EPL, 2019-20',
+            'John McGinn, EPL, 2019-20',
+            'Jorginho, EPL, 2019-20',
+            'Kevin DeBruyne, EPL, 2019-20',
+            'Marcus Rashford, EPL, 2019-20',
+            'Mason Mount, EPL, 2019-20',
+            'Mateo Kovacic, EPL, 2019-20',
+            'Miguel Almiron, EPL, 2019-20',
+            'Mohamed Salah, EPL, 2019-20',
+            'Nathan Redmond, EPL, 2019-20',
+            'Oliver Norwood, EPL, 2019-20',
+            'Neal Maupay, EPL, 2019-20',
+            'Pascal Gross, EPL, 2019-20',
+            'Roberto Firmino, EPL, 2019-20',
+            'Ross Barkley, EPL, 2019-20',
+            'Sadio Mane, EPL, 2019-20',
+            'Teemu Pukki, EPL, 2019-20',
+            'Todd Cantwell, EPL, 2019-20',
+            'Trent Alexander-Arnold, EPL, 2019-20',
+            'Virgil van Dijk, EPL, 2019-20',
+            'WilfriedZaha, EPL, 2019-20'
+        ]
+
+        allSetCodes = [      
+            'Wolves_For_Scoring_Player_AdamaTraore',
+            'Liverpool_For_Scoring_Player_Alisson',
+            'Newcastle_For_Scoring_Player_AllanSaint-Maximin',
+            'Liverpool_For_Scoring_Player_AndrewRobertson',
+            'ManCity_For_Scoring_Player_AymericLaporte',
+            'Leicester_For_Scoring_Player_CaglarSoyuncu',
+            'Bournemouth_For_Scoring_Player_CallumWilson',
+            'Southampton_For_Scoring_Player_DannyIngs',
+            'Burnley_For_Scoring_Player_DwightMcNeil',
+            'ManCity_For_Scoring_Player_Ederson',
+            'Norwich_For_Scoring_Player_EmilianoBuendia',
+            'Bournemouth_For_Scoring_Player_HarryWilson',
+            'AstonVilla_For_Scoring_Player_JackGrealish',
+            'Leicester_For_Scoring_Player_JamesMaddison',
+            'Leicester_For_Scoring_Player_JamieVardy',
+            'AstonVilla_For_Scoring_Player_JohnMcGinn',
+            'Chelsea_For_Scoring_Player_Jorginho',
+            'ManCity_For_Scoring_Player_KevinDeBruyne',
+            'ManUtd_For_Scoring_Player_MarcusRashford',
+            'Chelsea_For_Scoring_Player_MasonMount',
+            'Chelsea_For_Scoring_Player_MateoKovacic',
+            'Newcastle_For_Scoring_Player_MiguelAlmiron',
+            'Liverpool_For_Scoring_Player_MohamedSalah',
+            'Southampton_For_Scoring_Player_NathanRedmond',
+            'SheffieldUtd_For_Scoring_Player_OliverNorwood',
+            'Brighton_For_Scoring_Player_NealMaupay',
+            'Brighton_For_Scoring_Player_PascalGross',
+            'Liverpool_For_Scoring_Player_RobertoFirmino',
+            'Chelsea_For_Scoring_Player_RossBarkley',
+            'Liverpool_For_Scoring_Player_SadioMane',
+            'Norwich_For_Scoring_Player_TeemuPukki',
+            'Norwich_For_Scoring_Player_ToddCantwell',
+            'Liverpool_For_Scoring_Player_TrentAlexander-Arnold',
+            'Liverpool_For_Scoring_Player_VirgilvanDijk',
+            'CrystalPalace_For_Scoring_Player_WilfriedZaha'
+        ]
+
+        selectedSetCode = 'Liverpool_For_Scoring_Player_TrentAlexander-Arnold'
+
+        nBlockWidth = 2
+
+        cWhatScaleToUse = 'Team'
+
+        bExplainerTest = true
+
+        postCode = 'PlayerAttackPost'
+        
+        cContentPanelId = 'PlayerAttackContent'
+        
+        setSelectionPanelId = 'setPlayerAttackSelection'
+
+    }
+
+    fBuildVisualisation (
+        allSetNames,
+        allSetCodes,
+        selectedSetCode,
+        nBlockWidth,
+        cWhatScaleToUse,
+        bExplainerTest,
+        postCode,
+        cContentPanelId,
+        setSelectionPanelId
+    )
+    
+</script>
+
+
+<script>
+
+
+    // constants for this particular file
+    if ( true ) {
+
+        allSetNames = [
+            'X vs. Aston Villa, EPL, 2019-20',
+            'X vs. Bournemouth, EPL, 2019-20',
+            'X vs. Brighton, EPL, 2019-20',
+            'X vs. Burnley, EPL, 2019-20',
+            'X vs. Chelsea, EPL, 2019-20',
+            'X vs. Crystal Palace, EPL, 2019-20',
+            'X vs. Leicester, EPL, 2019-20',
+            'X vs. Liverpool, EPL, 2019-20',
+            'X vs. Manchester City, EPL, 2019-20',
+            'X vs. Manchester United, EPL, 2019-20',
+            'X vs. Newcastle, EPL, 2019-20',
+            'X vs. Norwich, EPL, 2019-20',
+            'X vs. Sheffield United, EPL, 2019-20',
+            'X vs. Southampton, EPL, 2019-20',
+            'X vs. Wolves, EPL, 2019-20'
+        ]
+
+        allSetCodes = [
+            'AstonVilla_Against_Scoring_Team',
+            'Bournemouth_Against_Scoring_Team',
+            'Brighton_Against_Scoring_Team',
+            'Burnley_Against_Scoring_Team',
+            'Chelsea_Against_Scoring_Team',
+            'CrystalPalace_Against_Scoring_Team',
+            'Leicester_Against_Scoring_Team',
+            'Liverpool_Against_Scoring_Team',
+            'ManCity_Against_Scoring_Team',
+            'ManUtd_Against_Scoring_Team',
+            'Newcastle_Against_Scoring_Team',
+            'Norwich_Against_Scoring_Team',
+            'SheffieldUtd_Against_Scoring_Team',
+            'Southampton_Against_Scoring_Team',
+            'Wolves_Against_Scoring_Team'
+        ]
+
+        selectedSetCode = 'Liverpool_Against_Scoring_Team'
+
+        nBlockWidth = 2
+
+        cWhatScaleToUse = 'Team'
+
+        bExplainerTest = false
+
+        postCode = 'TeamConcedePost'
+
+        cContentPanelId = 'TeamConcedeContent'
+                
+        setSelectionPanelId = 'setTeamConcedeSelection'
+
+    }
+
+    fBuildVisualisation (
+        allSetNames,
+        allSetCodes,
+        selectedSetCode,
+        nBlockWidth,
+        cWhatScaleToUse,
+        bExplainerTest,
+        postCode,
+        cContentPanelId,
+        setSelectionPanelId
+    )
+    
+</script>
+
+
+</body>
+</html>

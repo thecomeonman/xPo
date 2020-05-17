@@ -1,0 +1,137 @@
+p { 
+    display: table;
+    margin:auto;
+    width:800px;
+    padding-bottom:20px;
+    font-family:Helvetica;
+    font-size: 1.3em;
+    text-align: justify;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+ul { 
+    display: table;
+    margin:auto;
+    width:800px;
+    padding-bottom:20px;
+    font-size: 1.3em;
+    font-family:Helvetica;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+h3 { 
+    display: table;
+    margin:auto;
+    width:800px;
+    padding-bottom:20px;
+    font-size: 2em;
+    font-family:Helvetica;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+h4 { 
+    display: table;
+    margin:auto;
+    width:800px;
+    padding-bottom:20px;
+    font-size: 1.5em;
+    font-family:Helvetica;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+svg { 
+    display: block;
+    margin:auto;
+}
+label { 
+    background-color: white;
+    padding: 8px 16px;
+    display: table;
+    margin:auto;
+    margin-top:10px;
+    margin-bottom:10px;
+    font-family:Helvetica;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+select { 
+    background-color: white;
+    padding: 8px 16px;
+    display: table;
+    margin:auto;
+    margin-top:10px;
+    margin-bottom:10px;
+    font-family:Helvetica;
+    /* border-bottom:1px dotted; */
+    /* display: inline-block; */
+}
+.plotTitle {
+    font-size:0.8em;
+    font-weight: bold;
+    font-family:Helvetica;
+}
+/* Style tab links */
+.tablink4 {
+    background-color: #555;
+    color: white;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 17px;
+    width: 25%;
+    height: 80px;
+    font-family:Helvetica;
+}
+
+.tablink4:hover {
+    background-color: #777;
+}
+
+/* Style tab links */
+.tablink6 {
+    background-color: #555;
+    color: white;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 17px;
+    width: 16.66%;
+    height: 80px;
+    font-family:Helvetica;
+}
+
+.tablink6:hover {
+    background-color: #777;
+}
+
+/* Style tab links */
+.tablink3 {
+    background-color: #555;
+    color: white;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 17px;
+    width: 33.33%;
+    height: 80px;
+    font-family:Helvetica;
+}
+
+.tablink3:hover {
+    background-color: #777;
+}
+
+/* Style the tab content (and add height:100% for full page content) */
+.tabContent {
+    /* color: white; */
+    display: none;
+    padding: 100px 20px;
+    height: 100%;
+    font-family:Helvetica;
+}

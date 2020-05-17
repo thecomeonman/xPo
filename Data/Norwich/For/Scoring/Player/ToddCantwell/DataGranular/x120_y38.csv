@@ -1,0 +1,2 @@
+x,y,event,endX,endY,Count,WeightedCount,Goals,WeightedExpectedGoals,GoalProbability
+120,38,Shot,NaN,NaN,4,0.056,2,0.001,0.248
