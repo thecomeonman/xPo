@@ -67,18 +67,18 @@ if ( T ) {
     # If left null, it will look at the whole team, if selected, this will look at
     # actions only by that specific player
     cPositionId = NULL
-    # cPositionId = 1
-    # cPositionId = 6
-    # cPositionId = 5
-    # cPositionId = 3
-    # cPositionId = 2
-    # cPositionId = 10
-    # cPositionId = 15
-    # cPositionId = 13
-    # cPositionId = 21
-    # cPositionId = 23
-    # cPositionId = 17
-
+    cPositionId = 10 # CDM   
+    cPositionId = 23 # CF    
+    cPositionId = 1 # GK    
+    cPositionId = 6 # LB    
+    cPositionId = 5 # LCB   
+    cPositionId = 15 # LCM   
+    cPositionId = 21 # LW    
+    cPositionId = 2 # RB    
+    cPositionId = 3 # RCB   
+    cPositionId = 13 # RCM   
+    cPositionId = 17 # RW
+        
     # Where to get the data from
     cDataRepoPath = '/media/ask/Data/Personal/Projects/Personal/open-data/'
     # Where to save the output
@@ -423,14 +423,18 @@ if ( T ) {
         y1,
         x2,
         y2,
+        cEvent,
         dtProbabilities,
-        getxG = T
+        nCalculationResolution,
+        getXPO = T
     ) {
         
         nCalculationResolution = dtProbabilities[, diff(sort(unique(x)))]
         nCalculationResolution = min(nCalculationResolution[nCalculationResolution > 0])
         
         dtNearbyBallRunsProbabilities = dtProbabilities[
+            event == cEvent
+        ][
             ( x - ( nCalculationResolution / 2 ) ) <= x1 &
             ( x + ( nCalculationResolution / 2 ) ) > x1 &
             ( y - ( nCalculationResolution / 2 ) ) <= y1 &
@@ -449,7 +453,7 @@ if ( T ) {
         } else {
             
             
-            if ( getxG ) {
+            if ( getXPO ) {
                 nProbability =  dtNearbyBallRunsProbabilities[, xPo]
             } else {
                 nProbability =  dtNearbyBallRunsProbabilities[, WeightedGoals]
@@ -819,12 +823,20 @@ if ( T ) {
     # Getting human readable names for each position ID
     if ( T ) {
 
-        dtPositionNames = lMatchesData[[1]]$Starting.XI[, 
-            list(
-                positionName = position.name, 
-                positionId = position.id
+        dtPositionNames = rbindlist(
+            lapply(
+                lMatchesData,
+                function(lMatchData) {
+                    lMatchData$Starting.XI[, 
+                        list(
+                            positionName = position.name, 
+                            positionId = position.id
+                        )
+                    ]
+                }
             )
-        ]
+        )
+        dtPositionNames = dtPositionNames[, .SD[1], positionId]
         dtPositionNames[, positionName := gsub(positionName, pattern = ' ', replacement = '')]
         dtPositionNames[, positionName := gsub(positionName, pattern = paste0(letters, collapse = '|'), replacement = '')]
         dtPositionNames[positionName == 'G', positionName := 'GK' ]
@@ -860,23 +872,6 @@ if ( T ) {
         cFolder = cPositionId
 
     }
-
-    # Removing carries of lesser than nMinMoveDistance
-    lMatchesData = lapply(
-        lMatchesData, 
-        function(lMatchData) {        
-
-            lMatchData$Carry = lMatchData$Carry[  
-                nMinMoveDistance <= fEuclideanDistance(
-                     location1, location2, carry.end_location1, carry.end_location2
-                )
-            ]
-
-            lMatchData
-        }
-    )
-
-
 
     # We will calculate a total xpo generated but it's better to look
     # at a p90 number so keeping track of time played
@@ -1127,6 +1122,7 @@ if ( T ) {
     # Pass and carry goal prob
     if ( T ) {
 
+
         dtBallMoveEvents = rbindlist(
             lapply(
                 lMatchesData,
@@ -1161,6 +1157,10 @@ if ( T ) {
                                 endY = as.numeric(carry.end_location2),
                                 eventSequence = as.integer(index),
                                 event = 'Run'
+                            )
+                        ][
+                            nMinMoveDistance <= fEuclideanDistance(
+                                x, y, endX, endY
                             )
                         ]
 
@@ -1438,13 +1438,13 @@ if ( T ) {
 
 
 ################################################################################
-# xPo visualistin code
+# xPo visualisation code
 ################################################################################
 
 if ( T ) {
 
-    load(
-        sample(
+    dtBallMoveGoalProbability = rbindlist(
+        lapply(
             list.files(
                 paste0(
                     cOutputPath, '/',
@@ -1457,14 +1457,25 @@ if ( T ) {
                 full.names = T,
                 recursive = T
             ),
-            1
+            function( cFile ) {
+                load(cFile)
+                dtBallMoveGoalProbability
+            }
+
         )
     )
 
-    p1 = ggplot(
-        dtBallMoveGoalProbability[
+    dtBallMoveGoalProbabilitySample = dtBallMoveGoalProbability[
+        x == sample(x, 1)
+        
+    ][
+        y == sample(y, 1)
+    ][
             event == 'Pass'
         ]
+
+    p1 = ggplot(
+        dtBallMoveGoalProbabilitySample
     ) +
         geom_tile(
             aes(
@@ -1474,7 +1485,7 @@ if ( T ) {
             )
         ) + 
         geom_text(
-            data = dtBallMoveGoalProbability[1],
+            data = dtBallMoveGoalProbabilitySample[1],
             aes(
                 x = x,
                 y = y,
@@ -1484,7 +1495,7 @@ if ( T ) {
             vjust = 2
         ) + 
         geom_point(
-            data = dtBallMoveGoalProbability[1],
+            data = dtBallMoveGoalProbabilitySample[1],
             aes(
                 x = x,
                 y = y
@@ -1494,8 +1505,8 @@ if ( T ) {
         ) + 
         ggtitle(
             paste0(
-                'xPo of pass at receiving coordinates, originating from ',
-                dtBallMoveGoalProbability[1, paste(x, y)]
+                'xPo for passes originating from ',
+                dtBallMoveGoalProbabilitySample[1, paste(x, y)]
             )
         )
 
@@ -1512,19 +1523,17 @@ if ( T ) {
 
 
     p2 = ggplot(
-        dtBallMoveGoalProbability[
-            event == 'Pass'
-        ]
+        dtBallMoveGoalProbabilitySample
     ) +
         geom_tile(
             aes(
                 x = endX,
                 y = endY,
-                fill = WeightedExpectedGoals / dtTimePlayed[, 90 * 60 / sum(TimePlayed, na.rm = T)]
+                fill = WeightedExpectedGoals * dtTimePlayed[, 90 * 60 / sum(TimePlayed, na.rm = T)]
             )
         ) + 
         geom_text(
-            data = dtBallMoveGoalProbability[1],
+            data = dtBallMoveGoalProbabilitySample[1],
             aes(
                 x = x,
                 y = y,
@@ -1534,7 +1543,7 @@ if ( T ) {
             vjust = 2
         ) + 
         geom_point(
-            data = dtBallMoveGoalProbability[1],
+            data = dtBallMoveGoalProbabilitySample[1],
             aes(
                 x = x,
                 y = y
@@ -1544,10 +1553,11 @@ if ( T ) {
         ) + 
         ggtitle(
             paste0(
-                'Total xPo generated p90 at receiving coordinates, originating from ',
-                dtBallMoveGoalProbability[1, paste(x, y)]
+                'Total xPo generated p90 for passes originating from ',
+                dtBallMoveGoalProbabilitySample[1, paste(x, y)]
             )
-        )
+        ) + 
+        scale_fill_continuous(name = 'xPo generated p90')
 
     p2 = fAddPitchLines(
         plotObject = p2,
@@ -1558,5 +1568,33 @@ if ( T ) {
     )
 
     print(p2)
+
+    x1 = 60
+    y1 = 40
+    x2 = 110
+    y2 = 40
+
+    print(
+        paste0(
+            'Predicting the xPo for a pass between (',
+            x1, ',', y1,
+            ') and  (',
+            x2, ',', y2,
+            ')'
+        )
+    )
+    
+    print(
+        fPredictTwoCoordinatexPo (
+            x1,
+            y1,
+            x2,
+            y2,
+            'Pass',
+            dtBallMoveGoalProbability,
+            nCalculationResolution,
+            getXPO = T
+        )
+    )
 
 }
