@@ -18,12 +18,13 @@
 
 
 
-<button class='tablink6' onclick="openPage('Intro', this, 'red', 'tablink6')" id="defaultOpen">Introduction</button>
-<button class='tablink6' onclick="openPage('setTeamAttack', this, 'red', 'tablink6')">How Teams Attack</button>
-<button class='tablink6' onclick="openPage('setPlayerAttack', this, 'red', 'tablink6')">How Players Attack</button>
-<button class='tablink6' onclick="openPage('setTeamConcede', this, 'red', 'tablink6')">How Teams Concede</button>
-<button class='tablink6' onclick="openPage('ModelComparison', this, 'red', 'tablink6')">Comparison With Other Models</button>
-<button class='tablink6' onclick="openPage('ReachOut', this, 'red', 'tablink6')">What Do You Think?</button>
+<button class='tablink7' onclick="openPage('Intro', this, 'red', 'tablink7')" id="defaultOpen">Introduction</button>
+<button class='tablink7' onclick="openPage('setTeamAttack', this, 'red', 'tablink7')">How Teams Attack</button>
+<button class='tablink7' onclick="openPage('setPlayerAttack', this, 'red', 'tablink7')">How Players Attack</button>
+<button class='tablink7' onclick="openPage('setTeamConcede', this, 'red', 'tablink7')">How Teams Concede</button>
+<button class='tablink7' onclick="openPage('setTeamCombination', this, 'red', 'tablink7')">Opponent Specific xPo</button>
+<button class='tablink7' onclick="openPage('ModelComparison', this, 'red', 'tablink7')">Comparison With Other Models</button>
+<button class='tablink7' onclick="openPage('ReachOut', this, 'red', 'tablink7')">What Do You Think?</button>
 
 <div id = 'Intro' class="tabContent">
 
@@ -233,6 +234,56 @@
     <div id = 'TeamConcedeContent'></div>
 </div>
     
+
+<div id = 'setTeamCombination' class="tabContent">
+    <div id = 'setTeamCombinationExplanation1'>
+        
+        <h3>
+            Planning for an Opponent
+        </h3>
+
+        <p>
+            An interesting use of xPo could be to identify overlaps of a team's
+            strengths with an opponent's weaknesses. A simple implementation of 
+            this is demonstrated below with Liverpool and Aston Villa respectively.
+        </p>
+
+        <p>
+            For every action at or between a set of coordinates, I look at the xPo
+            from Liverpool's actions and the xPo from all of Aston Villa's oppositions's
+            actions and calculate their geometric mean, i.e. xPo combined = square root
+            of xPo of Liverpool X xPo of Aston Villa's opponents. Actions where
+            Liverpool's actions and Aston Villa's opponents' actions both lead to
+            high xPo values, the combined xPo should also be a high value. In all 
+            other situation, the combined xPo should get suppressed to lower values.
+        </p>
+
+    </div>
+    <div id = 'setTeamCombinationContent'></div>
+    <div id = 'setTeamCombinationExplanation1'>
+        
+        <p>
+            This method highlights three areas in red that Liverpool can expect better 
+            returns than what they get against their typical opponent. These 
+            are - 1, the area near Aston Villa's left corner,
+            2, the area to the left of Aston Villa's goal, and 3, the area around 
+            the right edge of Aston Villa's box. It also suggests that the blue area
+            to the right of Aston Villa's goal and some other spots in the nearby
+            area may not be as rewarding as usual.
+        </p>
+        
+        <p>
+            Liverpool also scored more proficiently than Aston Villa conceded so
+            the above observation should only be considered in a relative manner.
+            It is possible that Liverpool would score with their regular probabilities
+            from the area to the right of Aston Villa's goal but in that case they
+            would be scoring with much higher probabilities from the other three
+            areas mentioned above. 
+        </p>
+
+    </div>
+</div>
+    
 <div id = 'ModelComparison' class="tabContent">
 
     <p>
@@ -370,21 +421,51 @@
 <div id = 'ReachOut' class="tabContent">
 
     <p>
-        I had originally done this as a way to help someone prepare for a match
+        I had originally done this as a tool to help a team prepare for a match
         and I have a demo of what an xPo based dashboard could look like - <a 
         href = 'https://thecomeonman.github.io/xPoDashboard', target = '_blank'>here</a>.
+        An earlier version of this was my submission for the Seattle Sounders' 2020
+        Soccer Analytics Conference and got an honourable mention.
     </p>
 
     <p>
         There is also code available to generate the raw data needed for the 
         dashboard <a href = 'https://github.com/thecomeonman/xPo2/blob/master/CalculatingFromStatsbombData.R', target = '_blank'>here</a>
-        which you can repurpose to use on other datasets too.
+        which you can repurpose to use on other datasets.
     </p>
 
     <p>
         Do you have any feedback, comments, questions, or interesting 
         observations? Would you like to use xPo at your club? You can 
-        <a href = 'https://twitter.com/thecomeonman' target="_blank">find me on Twitter</a>!
+        <a href = 'https://twitter.com/thecomeonman' target="_blank">find me on Twitter</a>
+        or send me an e-mail at mail dot thecomeonman at g mail dot com
+    </p>
+
+    <h3>Non TL;DR Section</h3>
+
+    <p>
+        The demos here and on the dashboard are restricted to only three events
+        but the same logic can be extended to any other event too. For eg. you could
+        evaluate an xPo for, say, tackles, in different parts of the pitch by
+        looking at how much xG the possessions with tackles in that area eventually 
+        led to.
+    </p>
+
+    <p>
+        A shortcut that some value estimation frameworks apply is to just use the 
+        aggregated xPo from runs, passes, and shots at the location that the ball
+        was won, add the value of the opposition's xPo at that point, since the tackle
+        robbed them of that much xPo, and attribute that as the total xPo of that
+        action.
+    </p>
+
+    <p>
+        An idea I got from Jan Van Haaren of SciSports is to also extend
+        this to calculate the chances of a team conceding from a particular
+        action. The way this can be modelled is similar to how xPo is calculated,
+        except you use the xG generated by the next possession of the
+        opponent. The net xPo of an action would then be the difference of the 
+        scoring xPo and conceding xPo. 
     </p>
 
 
@@ -652,6 +733,13 @@
     
 </script>
 
+<script>
+    fBuildOpponentSpecificViz(
+        dataPath = './Data/Liverpool/vsAstonVilla.csv',
+        nBlockWidth = 2,
+        cContentPanelId = 'setTeamCombinationContent'
+    )
+</script>
 
 </body>
 </html>

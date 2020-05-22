@@ -1,3 +1,317 @@
+// common constants
+if ( true ) {
+
+
+    cHighlightColour = '#FF69B4'
+
+    // https://codepen.io/fieldwork/pen/RaKLrJ pitch code
+
+    pitch = {
+        width: 80,
+        length: 120,
+        centerCircleRadius: 10,
+        penaltyArea: {
+            width: 36,
+            height: 18
+        },
+        padding: {
+            top: 12,
+            bottom: 12,
+            right: 12,
+            left: 12
+        },
+        paintColor: "#FFFFFF",
+        // grassColor: "#000000"
+        grassColor: "#CCCCCC",
+    };
+
+    zeroColour = "#000000"
+    // zeroColour = pitch.grassColor
+
+    colorPalette = [
+        // '#b3e2cd',
+        // '#fdcdac',
+        // '#cbd5e8',
+        // '#f4cae4',
+        // '#e6f5c9',
+        // '#fff2ae',
+        // '#f1e2cc',
+        // '#cccccc'
+
+        // '#1b9e77',
+        // '#d95f02',
+        // '#7570b3',
+        // '#e7298a',
+        // '#66a61e',
+        // '#e6ab02',
+        // '#a6761d',
+        // '#666666'
+
+        // '#e41a1c',
+        // '#377eb8',
+        // '#4daf4a',
+        // '#984ea3',
+        // '#ff7f00',
+        // '#ffff33',
+        // '#ffffff',
+        // // '#a65628',
+        // "#e7298a"
+        // // '#f781bf'
+
+        '#a65628',
+        '#ffffff',
+
+        '#ff0000',
+        // '#e31a1c',
+        '#00ff00',
+        // '#33a02c',
+
+        // '#1f78b4',
+        '#0092FF',
+        '#ff7f00',
+
+        '#ffff33',
+        '#984ea3'
+        // '#a6cee3',
+        // '#b2df8a',
+        // '#fb9a99',
+        // '#fdbf6f',
+
+    ]
+
+    // it's a little confusing with the widths and lengths
+    pitch['frame'] = []
+    pitch['frame']['width'] = pitch.padding.left + pitch.length + pitch.padding.right
+    pitch['frame']['length'] = pitch.padding.top + pitch.width + pitch.padding.bottom
+
+    nPitchDomainSize4 = 300
+
+
+}
+
+
+
+
+
+// global functions
+if ( true ) {
+
+    xScale4 = d3.scaleLinear()
+        .domain([0, 120])
+        .range([0, nPitchDomainSize4]);
+
+    yScale4 = d3.scaleLinear()
+        .domain([80, 0])
+        .range([0, nPitchDomainSize4 * 80 / 120]);
+
+    xScale2 = d3.scaleLinear()
+        .domain([0, 120])
+        .range([0, 2 * nPitchDomainSize4]);
+
+    yScale2 = d3.scaleLinear()
+        .domain([80, 0])
+        .range([0, 2 * nPitchDomainSize4 * 80 / 120]);
+
+    addPitchOutlines = function ( 
+        pitchElementMarkings,
+        xScale
+    ) {
+
+        pitchElementMarkings.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("height", xScale(pitch.width))
+            .attr("width", xScale(pitch.length))
+            .attr("stroke", pitch.paintColor)
+            .attr("fill", "none")
+
+
+        var centerSpot = pitchElementMarkings.append("circle")
+            .attr("cy", xScale(pitch.width/2))
+            .attr("cx", xScale(pitch.length/2))
+            .attr("r", 1)
+            .attr("fill", pitch.paintColor)
+
+        var centerCircle = pitchElementMarkings.append("circle")
+            .attr("cy", xScale(pitch.width/2))
+            .attr("cx", xScale(pitch.length/2))
+            .attr("r", xScale(pitch.centerCircleRadius))
+            .attr("fill", 'none')
+            .attr("stroke", pitch.paintColor)
+
+        var halfwayLine = pitchElementMarkings.append("line")
+            .attr("x1", xScale(pitch.length/2))
+            .attr("x2", xScale(pitch.length/2))
+            .attr("y1", 0)
+            .attr("y2", xScale(pitch.width))
+            .attr("stroke", pitch.paintColor)
+
+        // corners
+
+        function addPath(pathData, parentElement){
+            parentElement.append("path")
+                .attr("d", pathData)
+                .attr("stroke", pitch.paintColor)
+                .attr("fill", "none") 
+        }
+
+        // top left
+        var pathData = "M0," + xScale(1) + "A " + xScale(1) +" " + xScale(1) + " 45 0 0" + xScale(1) + ",0";
+        addPath(pathData, pitchElementMarkings);
+
+        // top right
+        var pathData = "M"+xScale(pitch.length - 1)+",0 A " + xScale(1) +" " + xScale(1) + " 45 0 0" + xScale(pitch.length) + ","+ xScale(1);
+        addPath(pathData, pitchElementMarkings);
+
+        // bottom left
+        var pathData = "M0," + xScale(pitch.width-1) + "A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(1) + "," + xScale(pitch.width);
+        addPath(pathData, pitchElementMarkings);
+
+        // bottom right
+        var pathData = "M" + xScale(pitch.length - 1) + ',' + xScale(pitch.width) + "A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(pitch.length) + "," + xScale(pitch.width - 1);
+        addPath(pathData, pitchElementMarkings);
+
+        // Top Penalty Area
+        var penaltyAreaTop = pitchElementMarkings.append("g");
+        var pathData = "M0," + xScale(pitch.width/2 - 4 - 18) +"L" + xScale(18) + "," + xScale(pitch.width/2 - 4 - 18) + "V" + xScale(pitch.width/2 + 4 + 18) + "H0";
+        addPath(pathData, penaltyAreaTop);
+
+        // Top Penalty Area
+        var pathData = "M0," + xScale(pitch.width/2 - 4 - 6) +"L" + xScale(6) + "," + xScale(pitch.width/2 - 4 - 6) + "v" + xScale(20) + "H0";
+        // var pathData = "M" + xScale(pitch.width/2 - 4 - 6) +",0L" + xScale(pitch.width/2 - 4 - 6) + "," + xScale(6) + "h" + xScale(20) + "V0";
+        addPath(pathData, penaltyAreaTop);
+
+        // Top D
+        var pathData = "M" + xScale(18) + "," + xScale(pitch.width/2 - 8) + "A" + xScale(10) + " " + xScale(10) + " 5 0 1 " + xScale(18) + "," + xScale(pitch.width/2 + 8);
+        // var pathData = "M" + xScale(pitch.width/2 - 8) +","+xScale(18)+"A "+xScale(10)+" "+ xScale(10) +" 5 0 0 " + xScale(pitch.width/2 + 8) +","+xScale(18);
+        addPath(pathData, penaltyAreaTop);
+
+        // Top Penalty Spot
+        var penaltySpotTop = penaltyAreaTop.append("circle")
+            .attr("cy", xScale(pitch.width/2))
+            .attr("cx", xScale(12))
+            .attr("r", 1)
+            .attr("fill", pitch.paintColor)
+            .attr("stroke", pitch.paintColor)
+
+        penaltyAreaBottom = pitchElementMarkings.append("g");
+        penaltyAreaBottom.html(penaltyAreaTop.html());
+        penaltyAreaBottom.attr("transform", "rotate(180) translate(-" + xScale(pitch.length)+",-"+xScale(pitch.width)+")")
+
+
+        // Direction of attack
+        nOffsetFromPitch = 3
+        nVerticalHeight = 3
+        var pathData = "M" + xScale(0) + "," + xScale(pitch.width + nOffsetFromPitch) + 
+            "V" + ( xScale4(nVerticalHeight) + xScale(pitch.width + nOffsetFromPitch) ) + 
+            "L" + ( xScale(0) + xScale4(5) ) + "," + ( xScale(pitch.width + nOffsetFromPitch) + xScale4(nVerticalHeight/2) ) + 
+            "L" + xScale(0) + "," + xScale(pitch.width + nOffsetFromPitch);
+        // var pathData = "M" + xScale(pitch.length/2) + "," + xScale(pitch.width + nOffsetFromPitch) + 
+        //     "V" + xScale(pitch.width + nVerticalHeight + nOffsetFromPitch) + 
+        //     "L" + xScale((pitch.length/2) + 5) + "," + xScale(pitch.width + (nVerticalHeight/2) + nOffsetFromPitch) + 
+        //     "L" + xScale(pitch.length/2) + "," + xScale(pitch.width + nOffsetFromPitch);
+
+        // var pathData = "M" + xScale(pitch.width/2 - 4 - 6) +",0L" + xScale(pitch.width/2 - 4 - 6) + "," + xScale(6) + "h" + xScale(20) + "V0";
+        pitchElementMarkings.append("path")
+            .attr("d", pathData)
+            .attr("stroke", pitch.grassColor)
+            .attr("fill", pitch.grassColor) ;
+        
+        pitchElementMarkings.append("text")
+            .attr("text-anchor", "start")
+            .attr("alignment-baseline", "central")
+            .attr("font-size", "0.7em")
+            .attr("x", xScale4( nOffsetFromPitch + nVerticalHeight ) )//padding of 4px
+            .attr("y", ( xScale(pitch.width + nOffsetFromPitch) + xScale4(nVerticalHeight/1.8) ))
+            .text("Direction of attack");
+
+
+        // top right
+        // var pathData = "M"+xScale(pitch.length - 1)+","+xScale(pitch.width)+" A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(pitch.length) + ","+ xScale(pitch.length-1);
+        // addPath(pathData, pitchElementMarkings);
+
+
+
+    }
+
+    
+    addPitchColor = function ( 
+        pitchElement,
+        xScale
+    ) {
+
+        pitchElement.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("height", xScale(pitch.width))
+        .attr("width", xScale(pitch.length))
+        // .attr("x", -nBlockWidth / 2)
+        // .attr("y", -nBlockWidth / 2)
+        // .attr("height", xScale(pitch.width + (nBlockWidth)))
+        // .attr("width", xScale(pitch.length + (nBlockWidth)))
+        .attr("fill", pitch.grassColor)
+
+        return pitchElement
+
+    }
+
+    addPlotTitle = function ( 
+        pitchElement,
+        titleText,
+        xScale,
+        nBlockWidth,
+        selectedSetName,
+        cContentPanelId
+    ) {
+
+        pitchElement
+            .append('text')
+            .attr('class', 'plotTitle ' + cContentPanelId)
+            .text(selectedSetName)
+            .attr("alignment-baseline", "bottom")
+            .attr('x', 0)
+            .attr('y', -xScale(1 * nBlockWidth) - 15)
+
+        pitchElement
+            .append('text')
+            .attr('class', 'plotTitle ' + cContentPanelId)
+            .text(titleText)
+            .attr("alignment-baseline", "bottom")
+            .attr('x', 0)
+            .attr('y', -xScale(1 * nBlockWidth))
+
+    }
+
+    addPlotLegend = function ( 
+        pitchElement,
+        xScale,
+        nBlockWidth,
+        colorScale,
+        pitchlength
+    ) {
+
+        pitchElement
+            .append('rect')
+            .attr("alignment-baseline", "bottom")
+            .attr('x', xScale(pitchlength - (nBlockWidth * 1)))
+            .attr('y', -xScale(1.8 * nBlockWidth))
+            .attr('height',xScale(nBlockWidth))
+            .attr('width', xScale(nBlockWidth * 1))
+            .attr('fill', colorScale(colorScale.domain()[1]) )
+
+    }
+
+
+
+    d3.selection.prototype.moveToFront = function() {
+        return this.each(function(){
+        this.parentNode.appendChild(this);
+        });
+    };
+
+
+}
+
 fBuildVisualisation = function (
     allSetNames,
     allSetCodes,
@@ -12,309 +326,7 @@ fBuildVisualisation = function (
 
     selectedSetName = allSetNames[allSetCodes.indexOf(selectedSetCode)]
         
-    // common constants
     if ( true ) {
-
-
-        cHighlightColour = '#FF69B4'
-
-        // https://codepen.io/fieldwork/pen/RaKLrJ pitch code
-
-        pitch = {
-            width: 80,
-            length: 120,
-            centerCircleRadius: 10,
-            penaltyArea: {
-                width: 36,
-                height: 18
-            },
-            padding: {
-                top: 12,
-                bottom: 12,
-                right: 12,
-                left: 12
-            },
-            paintColor: "#FFFFFF",
-            // grassColor: "#000000"
-            grassColor: "#CCCCCC",
-        };
-
-        zeroColour = "#000000"
-        // zeroColour = pitch.grassColor
-
-        colorPalette = [
-            // '#b3e2cd',
-            // '#fdcdac',
-            // '#cbd5e8',
-            // '#f4cae4',
-            // '#e6f5c9',
-            // '#fff2ae',
-            // '#f1e2cc',
-            // '#cccccc'
-
-            // '#1b9e77',
-            // '#d95f02',
-            // '#7570b3',
-            // '#e7298a',
-            // '#66a61e',
-            // '#e6ab02',
-            // '#a6761d',
-            // '#666666'
-
-            // '#e41a1c',
-            // '#377eb8',
-            // '#4daf4a',
-            // '#984ea3',
-            // '#ff7f00',
-            // '#ffff33',
-            // '#ffffff',
-            // // '#a65628',
-            // "#e7298a"
-            // // '#f781bf'
-
-            '#a65628',
-            '#ffffff',
-
-            '#ff0000',
-            // '#e31a1c',
-            '#00ff00',
-            // '#33a02c',
-
-            // '#1f78b4',
-            '#0092FF',
-            '#ff7f00',
-
-            '#ffff33',
-            '#984ea3'
-            // '#a6cee3',
-            // '#b2df8a',
-            // '#fb9a99',
-            // '#fdbf6f',
-
-        ]
-
-        // it's a little confusing with the widths and lengths
-        pitch['frame'] = []
-        pitch['frame']['width'] = pitch.padding.left + pitch.length + pitch.padding.right
-        pitch['frame']['length'] = pitch.padding.top + pitch.width + pitch.padding.bottom
-
-        nPitchDomainSize4 = 300
-
-
-    }
-
-
-
-
-
-    // global functions
-    if ( true ) {
-
-        xScale4 = d3.scaleLinear()
-            .domain([0, 120])
-            .range([0, nPitchDomainSize4]);
-
-        yScale4 = d3.scaleLinear()
-            .domain([80, 0])
-            .range([0, nPitchDomainSize4 * 80 / 120]);
-
-        xScale2 = d3.scaleLinear()
-            .domain([0, 120])
-            .range([0, 2 * nPitchDomainSize4]);
-
-        yScale2 = d3.scaleLinear()
-            .domain([80, 0])
-            .range([0, 2 * nPitchDomainSize4 * 80 / 120]);
-
-        addPitchOutlines = function ( 
-            pitchElementMarkings,
-            xScale
-        ) {
-
-            pitchElementMarkings.append("rect")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("height", xScale(pitch.width))
-                .attr("width", xScale(pitch.length))
-                .attr("stroke", pitch.paintColor)
-                .attr("fill", "none")
-
-
-            var centerSpot = pitchElementMarkings.append("circle")
-                .attr("cy", xScale(pitch.width/2))
-                .attr("cx", xScale(pitch.length/2))
-                .attr("r", 1)
-                .attr("fill", pitch.paintColor)
-
-            var centerCircle = pitchElementMarkings.append("circle")
-                .attr("cy", xScale(pitch.width/2))
-                .attr("cx", xScale(pitch.length/2))
-                .attr("r", xScale(pitch.centerCircleRadius))
-                .attr("fill", 'none')
-                .attr("stroke", pitch.paintColor)
-
-            var halfwayLine = pitchElementMarkings.append("line")
-                .attr("x1", xScale(pitch.length/2))
-                .attr("x2", xScale(pitch.length/2))
-                .attr("y1", 0)
-                .attr("y2", xScale(pitch.width))
-                .attr("stroke", pitch.paintColor)
-
-            // corners
-
-            function addPath(pathData, parentElement){
-                parentElement.append("path")
-                    .attr("d", pathData)
-                    .attr("stroke", pitch.paintColor)
-                    .attr("fill", "none") 
-            }
-
-            // top left
-            var pathData = "M0," + xScale(1) + "A " + xScale(1) +" " + xScale(1) + " 45 0 0" + xScale(1) + ",0";
-            addPath(pathData, pitchElementMarkings);
-
-            // top right
-            var pathData = "M"+xScale(pitch.length - 1)+",0 A " + xScale(1) +" " + xScale(1) + " 45 0 0" + xScale(pitch.length) + ","+ xScale(1);
-            addPath(pathData, pitchElementMarkings);
-
-            // bottom left
-            var pathData = "M0," + xScale(pitch.width-1) + "A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(1) + "," + xScale(pitch.width);
-            addPath(pathData, pitchElementMarkings);
-
-            // bottom right
-            var pathData = "M" + xScale(pitch.length - 1) + ',' + xScale(pitch.width) + "A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(pitch.length) + "," + xScale(pitch.width - 1);
-            addPath(pathData, pitchElementMarkings);
-
-            // Top Penalty Area
-            var penaltyAreaTop = pitchElementMarkings.append("g");
-            var pathData = "M0," + xScale(pitch.width/2 - 4 - 18) +"L" + xScale(18) + "," + xScale(pitch.width/2 - 4 - 18) + "V" + xScale(pitch.width/2 + 4 + 18) + "H0";
-            addPath(pathData, penaltyAreaTop);
-
-            // Top Penalty Area
-            var pathData = "M0," + xScale(pitch.width/2 - 4 - 6) +"L" + xScale(6) + "," + xScale(pitch.width/2 - 4 - 6) + "v" + xScale(20) + "H0";
-            // var pathData = "M" + xScale(pitch.width/2 - 4 - 6) +",0L" + xScale(pitch.width/2 - 4 - 6) + "," + xScale(6) + "h" + xScale(20) + "V0";
-            addPath(pathData, penaltyAreaTop);
-
-            // Top D
-            var pathData = "M" + xScale(18) + "," + xScale(pitch.width/2 - 8) + "A" + xScale(10) + " " + xScale(10) + " 5 0 1 " + xScale(18) + "," + xScale(pitch.width/2 + 8);
-            // var pathData = "M" + xScale(pitch.width/2 - 8) +","+xScale(18)+"A "+xScale(10)+" "+ xScale(10) +" 5 0 0 " + xScale(pitch.width/2 + 8) +","+xScale(18);
-            addPath(pathData, penaltyAreaTop);
-
-            // Top Penalty Spot
-            var penaltySpotTop = penaltyAreaTop.append("circle")
-                .attr("cy", xScale(pitch.width/2))
-                .attr("cx", xScale(12))
-                .attr("r", 1)
-                .attr("fill", pitch.paintColor)
-                .attr("stroke", pitch.paintColor)
-
-            penaltyAreaBottom = pitchElementMarkings.append("g");
-            penaltyAreaBottom.html(penaltyAreaTop.html());
-            penaltyAreaBottom.attr("transform", "rotate(180) translate(-" + xScale(pitch.length)+",-"+xScale(pitch.width)+")")
-
-
-            // Direction of attack
-            nOffsetFromPitch = 3
-            nVerticalHeight = 3
-            var pathData = "M" + xScale(0) + "," + xScale(pitch.width + nOffsetFromPitch) + 
-                "V" + ( xScale4(nVerticalHeight) + xScale(pitch.width + nOffsetFromPitch) ) + 
-                "L" + ( xScale(0) + xScale4(5) ) + "," + ( xScale(pitch.width + nOffsetFromPitch) + xScale4(nVerticalHeight/2) ) + 
-                "L" + xScale(0) + "," + xScale(pitch.width + nOffsetFromPitch);
-            // var pathData = "M" + xScale(pitch.length/2) + "," + xScale(pitch.width + nOffsetFromPitch) + 
-            //     "V" + xScale(pitch.width + nVerticalHeight + nOffsetFromPitch) + 
-            //     "L" + xScale((pitch.length/2) + 5) + "," + xScale(pitch.width + (nVerticalHeight/2) + nOffsetFromPitch) + 
-            //     "L" + xScale(pitch.length/2) + "," + xScale(pitch.width + nOffsetFromPitch);
-
-            // var pathData = "M" + xScale(pitch.width/2 - 4 - 6) +",0L" + xScale(pitch.width/2 - 4 - 6) + "," + xScale(6) + "h" + xScale(20) + "V0";
-            pitchElementMarkings.append("path")
-                .attr("d", pathData)
-                .attr("stroke", pitch.grassColor)
-                .attr("fill", pitch.grassColor) ;
-            
-            pitchElementMarkings.append("text")
-                .attr("text-anchor", "start")
-                .attr("alignment-baseline", "central")
-                .attr("font-size", "0.7em")
-                .attr("x", xScale4( nOffsetFromPitch + nVerticalHeight ) )//padding of 4px
-                .attr("y", ( xScale(pitch.width + nOffsetFromPitch) + xScale4(nVerticalHeight/1.8) ))
-                .text("Direction of attack");
-
-
-            // top right
-            // var pathData = "M"+xScale(pitch.length - 1)+","+xScale(pitch.width)+" A " + xScale(1) +" " + xScale(1) + " 45 0 1" + xScale(pitch.length) + ","+ xScale(pitch.length-1);
-            // addPath(pathData, pitchElementMarkings);
-
-
-
-        }
-
-        
-        addPitchColor = function ( 
-            pitchElement,
-            xScale
-        ) {
-
-            pitchElement.append("rect")
-            .attr("x", 0)
-            .attr("y", 0)
-            .attr("height", xScale(pitch.width))
-            .attr("width", xScale(pitch.length))
-            // .attr("x", -nBlockWidth / 2)
-            // .attr("y", -nBlockWidth / 2)
-            // .attr("height", xScale(pitch.width + (nBlockWidth)))
-            // .attr("width", xScale(pitch.length + (nBlockWidth)))
-            .attr("fill", pitch.grassColor)
-
-            return pitchElement
-
-        }
-
-        addPlotTitle = function ( 
-            pitchElement,
-            titleText,
-            xScale,
-            nBlockWidth,
-            selectedSetName,
-            cContentPanelId
-        ) {
-
-            pitchElement
-                .append('text')
-                .attr('class', 'plotTitle ' + cContentPanelId)
-                .text(selectedSetName)
-                .attr("alignment-baseline", "bottom")
-                .attr('x', 0)
-                .attr('y', -xScale(1 * nBlockWidth) - 15)
-
-            pitchElement
-                .append('text')
-                .attr('class', 'plotTitle ' + cContentPanelId)
-                .text(titleText)
-                .attr("alignment-baseline", "bottom")
-                .attr('x', 0)
-                .attr('y', -xScale(1 * nBlockWidth))
-
-        }
-
-        addPlotLegend = function ( 
-            pitchElement,
-            xScale,
-            nBlockWidth,
-            colorScale,
-            pitchlength
-        ) {
-
-            pitchElement
-                .append('rect')
-                .attr("alignment-baseline", "bottom")
-                .attr('x', xScale(pitchlength - (nBlockWidth * 1)))
-                .attr('y', -xScale(1.8 * nBlockWidth))
-                .attr('height',xScale(nBlockWidth))
-                .attr('width', xScale(nBlockWidth * 1))
-                .attr('fill', colorScale(colorScale.domain()[1]) )
-
-        }
-
 
         addPitchData = function(
             pitchElement,
@@ -363,13 +375,6 @@ fBuildVisualisation = function (
                 .style("stroke-opacity", 1 )
 
         }
-
-        d3.selection.prototype.moveToFront = function() {
-            return this.each(function(){
-            this.parentNode.appendChild(this);
-            });
-        };
-
 
 
         addHighlightObject = function (
@@ -2882,5 +2887,385 @@ fBuildVisualisation = function (
         selectedSetName,
         postCode
     )
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fBuildOpponentSpecificViz = function (
+    dataPath,
+    nBlockWidth,
+    cContentPanelId = 'AttackContent'
+) {
+
+    d3.csv(
+        dataPath, 
+        function(dataCombined) {
+
+            colorScaleGoalProbability = d3.scaleLinear()
+                .range(
+                    [
+                        zeroColour, 
+                        colorPalette[6]
+                    ]
+                )
+                .domain(
+                    [
+                        0,
+                        d3.max(
+                            [
+                                d3.max(dataCombined, function (d) { return d.GoalProbabilityFor } ),
+                                d3.max(dataCombined, function (d) { return d.GoalProbabilityAgainst } ),
+                                d3.max(dataCombined, function (d) { return d.GoalProbabilityCombined } )
+                            ]
+                        )
+                    ]
+                )
+
+            colorScaleGoalProbabilityDifference = d3.scaleLinear()
+                .range(
+                    [
+                        '#0000FF',
+                        zeroColour, 
+                        '#FF0000'
+                    ]
+                )
+                .domain(
+                    [
+                        -d3.max(
+                            [
+                                -d3.min(dataCombined, function (d) { return d.GoalProbabilityCombined - d.GoalProbabilityFor } ),
+                                d3.max(dataCombined, function (d) { return d.GoalProbabilityCombined - d.GoalProbabilityFor } )
+                            ]
+                        ),
+                        0,
+                        d3.max(
+                            [
+                                -d3.min(dataCombined, function (d) { return d.GoalProbabilityCombined - d.GoalProbabilityFor } ),
+                                d3.max(dataCombined, function (d) { return d.GoalProbabilityCombined - d.GoalProbabilityFor } )
+                            ]
+                        )
+                    ]
+                )
+
+
+            var svgPanel = d3.select("#" + cContentPanelId).append("svg")
+                .attr(
+                    "width", 
+                    2 * xScale2(pitch.frame.width)
+                )
+                .attr(
+                    "height", 
+                    2 * xScale2(pitch.frame.length)
+                )
+
+
+
+
+
+
+
+
+
+            var pitchElementFor = svgPanel.append("g")
+                .attr(
+                    "transform", 
+                    "translate(" + xScale2(pitch.padding.left) + "," + xScale2(pitch.padding.top) + ")"
+                )
+                
+            addPlotTitle( 
+                pitchElementFor,
+                'Liverpool\'s xPo',
+                xScale2,
+                nBlockWidth,
+                null,
+                cContentPanelId
+            )
+
+
+            addPitchColor(
+                pitchElementFor,
+                xScale2
+            )
+                
+            var pitchElementForMarkings = pitchElementFor
+                .append("g")
+                .attr('class','pitchMarkings');
+
+            addPitchOutlines(
+                pitchElementForMarkings,
+                xScale2 = xScale2
+            )
+
+
+            pitchElementFor.selectAll()
+                .data(
+                    dataCombined
+                )
+                .enter()
+                .append("rect")
+                .attr("x", function(d) { 
+                    return xScale2(d.x) - xScale2(1.02*nBlockWidth/2) 
+                })
+                .attr("y", function(d) { 
+                    return yScale2(d.y) - xScale2(1.02*nBlockWidth/2)
+                })
+                .attr("width", xScale2(nBlockWidth * 1.02) )
+                .attr("height", xScale2(nBlockWidth * 1.02) )
+                .style("color", function(d) { return colorScaleGoalProbability(d.GoalProbabilityFor)} )
+                .style("fill", function(d) { return colorScaleGoalProbability(d.GoalProbabilityFor)} )
+                .style("fill-opacity", 1 )
+                .style("stroke-opacity", 1 )
+
+            pitchElementForMarkings.moveToFront()
+
+
+
+
+
+
+
+
+
+
+
+            var pitchElementAgainst = svgPanel.append("g")
+                .attr(
+                    "transform", 
+                    "translate(" + xScale2(pitch.padding.left + pitch.frame.width) + "," + xScale2(pitch.padding.top) + ")"
+                )
+                
+            addPlotTitle( 
+                pitchElementAgainst,
+                'Aston Villa\'s Opponents\' xPo',
+                xScale2,
+                nBlockWidth,
+                null,
+                cContentPanelId
+            )
+
+
+            addPitchColor(
+                pitchElementAgainst,
+                xScale2
+            )
+                
+            var pitchElementAgainstMarkings = pitchElementAgainst
+                .append("g")
+                .attr('class','pitchMarkings');
+
+            addPitchOutlines(
+                pitchElementAgainstMarkings,
+                xScale2 = xScale2
+            )
+
+
+            pitchElementAgainst.selectAll()
+                .data(
+                    dataCombined
+                )
+                .enter()
+                .append("rect")
+                .attr("x", function(d) { 
+                    return xScale2(d.x) - xScale2(1.02*nBlockWidth/2) 
+                })
+                .attr("y", function(d) { 
+                    return yScale2(d.y) - xScale2(1.02*nBlockWidth/2)
+                })
+                .attr("width", xScale2(nBlockWidth * 1.02) )
+                .attr("height", xScale2(nBlockWidth * 1.02) )
+                .style("color", function(d) { return colorScaleGoalProbability(d.GoalProbabilityAgainst)} )
+                .style("fill", function(d) { return colorScaleGoalProbability(d.GoalProbabilityAgainst)} )
+                .style("fill-opacity", 1 )
+                .style("stroke-opacity", 1 )
+
+            pitchElementAgainstMarkings.moveToFront()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            var pitchElementCombined = svgPanel.append("g")
+                .attr(
+                    "transform", 
+                    "translate(" + xScale2(pitch.padding.left) + "," + xScale2(pitch.padding.top + pitch.frame.length) + ")"
+                )
+                
+            addPlotTitle( 
+                pitchElementCombined,
+                'Combined xPo',
+                xScale2,
+                nBlockWidth,
+                null,
+                cContentPanelId
+            )
+
+
+            addPitchColor(
+                pitchElementCombined,
+                xScale2
+            )
+                
+            var pitchElementCombinedMarkings = pitchElementCombined
+                .append("g")
+                .attr('class','pitchMarkings');
+
+            addPitchOutlines(
+                pitchElementCombinedMarkings,
+                xScale2 = xScale2
+            )
+
+
+            pitchElementCombined.selectAll()
+                .data(
+                    dataCombined
+                )
+                .enter()
+                .append("rect")
+                .attr("x", function(d) { 
+                    return xScale2(d.x) - xScale2(1.02*nBlockWidth/2) 
+                })
+                .attr("y", function(d) { 
+                    return yScale2(d.y) - xScale2(1.02*nBlockWidth/2)
+                })
+                .attr("width", xScale2(nBlockWidth * 1.02) )
+                .attr("height", xScale2(nBlockWidth * 1.02) )
+                .style("color", function(d) { return colorScaleGoalProbability(d.GoalProbabilityCombined)} )
+                .style("fill", function(d) { return colorScaleGoalProbability(d.GoalProbabilityCombined)} )
+                .style("fill-opacity", 1 )
+                .style("stroke-opacity", 1 )
+
+            pitchElementCombinedMarkings.moveToFront()
+
+
+
+
+
+
+
+
+
+
+
+
+
+            var pitchElementDifference = svgPanel.append("g")
+                .attr(
+                    "transform", 
+                    "translate(" + xScale2(pitch.padding.left + pitch.frame.width) + "," + xScale2(pitch.padding.top + pitch.frame.length) + ")"
+                )
+                
+            addPlotTitle( 
+                pitchElementDifference,
+                '[Combined xPo] - [Liverpool\'s xPo]',
+                xScale2,
+                nBlockWidth,
+                null,
+                cContentPanelId
+            )
+
+
+            addPitchColor(
+                pitchElementDifference,
+                xScale2
+            )
+                
+            var pitchElementDifferenceMarkings = pitchElementDifference
+                .append("g")
+                .attr('class','pitchMarkings');
+
+            addPitchOutlines(
+                pitchElementDifferenceMarkings,
+                xScale2 = xScale2
+            )
+
+
+            pitchElementDifference.selectAll()
+                .data(
+                    dataCombined
+                )
+                .enter()
+                .append("rect")
+                .attr("x", function(d) { 
+                    return xScale2(d.x) - xScale2(1.02*nBlockWidth/2) 
+                })
+                .attr("y", function(d) { 
+                    return yScale2(d.y) - xScale2(1.02*nBlockWidth/2)
+                })
+                .attr("width", xScale2(nBlockWidth * 1.02) )
+                .attr("height", xScale2(nBlockWidth * 1.02) )
+                .style("color", function(d) { return colorScaleGoalProbabilityDifference(d.GoalProbabilityCombined - d.GoalProbabilityFor)} )
+                .style("fill", function(d) { return colorScaleGoalProbabilityDifference(d.GoalProbabilityCombined - d.GoalProbabilityFor)} )
+                .style("fill-opacity", 1 )
+                .style("stroke-opacity", 1 )
+
+            pitchElementDifferenceMarkings.moveToFront()
+
+
+
+
+
+        }   
+    )
+
 
 }
